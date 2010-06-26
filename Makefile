@@ -1,13 +1,14 @@
 OBJ_DIR         = ./obj
-DEPEND_FILE     = make.d
+DEPEND_FILE     = Makefile.d
 
 CXXFLAGS        += -c -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_GNU_SOURCE
 CXXFLAGS        += -Wall -W -Wno-format-y2k -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings
 CXXFLAGS        += -Wswitch -Wshadow -Wcast-align -Wuninitialized -Wformat=2
 CFLAGS          += -Wstrict-prototypes -Wmissing-prototypes
 
-RELEASE_FLAGS   = -O3 -DNDEBUG
-DEBUG_FLAGS     = -O3 -g -DDEBUG
+# TODO ubuntu 10.04 uses __longjmp_chk insted of _long_jump when -O3 or -O2
+RELEASE_FLAGS   = -O0 -DNDEBUG
+DEBUG_FLAGS     = -O0 -g -DDEBUG
 
 TARGET          = sample
 
@@ -32,9 +33,9 @@ endif
 CXXFLAGS        += $(INCLUDE_FLAGS)
 CFLAGS          += $(CXXFLAGS)
 
-CXX_SRCS        = $(shell find -name "*.cpp")
+CXX_SRCS        = $(shell find -name "*.cpp") $(shell find -name "*.cc")
 CC_SRCS         = $(shell find -name "*.c")
-OBJS            = ${CXX_SRCS:.cpp=.o} ${CC_SRCS:.c=.o}
+OBJS            = $(subst .cpp,.o,$(subst .cc,.o,$(CXX_SRCS)))
 
 all: depend $(OBJS)
 	$(CXX) $(addprefix $(OBJ_DIR)/, $(OBJS)) $(LDFLAGS) -o $(TARGET)
@@ -43,7 +44,7 @@ release:
 	@$(MAKE) -f Makefile RELEASE=y all
 
 clean: depend_clean
-	@rm -f $(addprefix $(OBJ_DIR)/, $(OBJS)) $(TARGET)
+	@rm -rf $(OBJ_DIR) $(TARGET)
 
 depend: depend_clean
 ifneq ($(strip $(CXX_SRCS)),)
@@ -56,7 +57,12 @@ endif
 depend_clean:
 	@rm -rf ./$(DEPEND_FILE)
 
+.SUFFIXES: .c .cpp .cc .o
 .cpp.o:
+	@mkdir -p $(OBJ_DIR)/$(dir $@)
+	$(CXX) $(CXXFLAGS) $< -o $(OBJ_DIR)/$@
+
+.cc.o:
 	@mkdir -p $(OBJ_DIR)/$(dir $@)
 	$(CXX) $(CXXFLAGS) $< -o $(OBJ_DIR)/$@
 
