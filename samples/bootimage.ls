@@ -1,10 +1,27 @@
 OUTPUT_FORMAT("binary");
-BASE = 0x0000;
+BASE_ADDR = 0;
+SIGN_ADDR = 510;
 
 SECTIONS
 {
-    . = BASE;
+    . = BASE_ADDR;
     .ipl : {
     	ipl.o
+    }
+    .text : {
+        *(.text)
+    }
+    .rodata : {
+        *(.rodata)
+    }
+    .data : {
+        *(.data)
+    }
+    .bss : {
+        *(.bss)
+    }
+    . = SIGN_ADDR;
+    .boot_signature : {
+        SHORT(0xaa55)
     }
 }
