@@ -33,8 +33,8 @@ endif
 CXXFLAGS        += $(INCLUDE_FLAGS)
 CFLAGS          += $(CXXFLAGS)
 
-CXX_SRCS        = $(shell find -name "*.cpp") $(shell find -name "*.cc")
-CC_SRCS         = $(shell find -name "*.c")
+CXX_SRCS        = $(shell find -name "samples" -prune -o -name "*.cpp" -print) $(shell find -name "samples" -prune -o -name "*.cc" -print)
+CC_SRCS         = $(shell find -name "samples" -prune -o -name "*.c" -print)
 OBJS            = $(subst .cpp,.o,$(subst .cc,.o,$(CXX_SRCS)))
 
 all: depend $(OBJS)
