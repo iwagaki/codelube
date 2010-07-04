@@ -12,16 +12,19 @@
 #define CL_THREAD_STACK_SIZE (16 * 1024)
 #endif
 
-class CLThread {
+class CLThread
+{
 public:
-    struct CLThreadContext {
+    struct CLThreadContext
+    {
         jmp_buf          jmpbuf;
         CLThreadContext *pCallerContext;
         CLThread*        pOwnerThread;
         uint8_t          stack[CL_THREAD_STACK_SIZE];
     };
 
-    CLThread() {
+    CLThread()
+    {
         m_context.pCallerContext = 0;
         m_context.pOwnerThread = this;
 
@@ -32,25 +35,32 @@ public:
         m_threadList.push_back(this);
     }
 
-    ~CLThread() {
+    ~CLThread()
+    {
         m_threadList.remove(this);
     }
 
-    void wait() {
+    void wait()
+    {
         m_threadList.remove(this);
     }
 
-    void run() {
+    void run()
+    {
         m_threadList.push_back(this);
     }
 
-    static void yield() {
+    static void yield()
+    {
         switchContext(m_pCurrentContext->pCallerContext); // switch back to the caller context
     }
 
-    static void start() {
-        for (;;) {
-            if (m_threadList.size() == 0) {
+    static void start()
+    {
+        for (;;)
+        {
+            if (m_threadList.size() == 0)
+            {
                 assert(0); // no registered thread or deadlock
                 return;
             }
@@ -58,7 +68,8 @@ public:
             CLThreadContext here; // the jmp_buff to return here
             m_pCurrentContext = &here;
 
-            for (std::list<CLThread*>::iterator i = m_threadList.begin(); i != m_threadList.end();) {
+            for (std::list<CLThread*>::iterator i = m_threadList.begin(); i != m_threadList.end();)
+            {
                 CLThread* pCLThread = *i++;
                 // ** WARNING ** increase i before calling pCLThread->call()
                 // pCLThread->call() somtimes remove pCLThread from m_threadList and never remove the other thread.
@@ -68,11 +79,13 @@ public:
     }
 
 private:
-    void call() {
+    void call()
+    {
         switchContext(&m_context);
     }
 
-    static void makeContext(jmp_buf* jmpbuf, void (*pEntry)(void), void* pStack) {
+    static void makeContext(jmp_buf* jmpbuf, void (*pEntry)(void), void* pStack)
+    {
         uint64_t stackAddress = reinterpret_cast<uint64_t>(pStack);
 
         setjmp(*jmpbuf);
@@ -84,7 +97,8 @@ private:
         jmpbuf[0]->__jmpbuf[6] = (long int)stackAddress;
     }
 
-    static void switchContext(CLThreadContext* pContext) {
+    static void switchContext(CLThreadContext* pContext)
+    {
         CLThreadContext* pOldContext = m_pCurrentContext;
 
         pContext->pCallerContext = pOldContext;
@@ -94,7 +108,8 @@ private:
             longjmp(pContext->jmpbuf, 1);
     }
 
-    static void staticMainEntry() {
+    static void staticMainEntry()
+    {
         m_pCurrentContext->pOwnerThread->main();
 
         m_threadList.remove(m_pCurrentContext->pOwnerThread);
@@ -113,12 +128,14 @@ private:
 
 
 template <class T>
-class CLChannel {
+class CLChannel
+{
 public:
     CLChannel() : m_pSrcMessage(0) {}
     ~CLChannel() {}
 
-    void copyMessage() {
+    void copyMessage()
+    {
         assert(m_pSrcMessage != 0);
         assert(m_pDstMessageList.size() > 0);
 
@@ -134,25 +151,29 @@ public:
         m_waitingThreadList.clear();
     }
 
-    void waitMessage(CLThread* pCLThread) {
+    void waitMessage(CLThread* pCLThread)
+    {
         pCLThread->wait();
         m_waitingThreadList.push_back(pCLThread);
         CLThread::yield();
     }
 
-    void exchangeMessage(CLThread* pCLThread) {
+    void exchangeMessage(CLThread* pCLThread)
+    {
         if (m_pSrcMessage && (m_pDstMessageList.size() != 0)) // adhoc
             copyMessage();
         else
             waitMessage(pCLThread);
     }
 
-    void in(T& message, CLThread* pCLThread) {
+    void in(T& message, CLThread* pCLThread)
+    {
         m_pDstMessageList.push_back(&message);
         exchangeMessage(pCLThread);
     }
 
-    void out(T& message, CLThread* pCLThread) {
+    void out(T& message, CLThread* pCLThread)
+    {
         m_pSrcMessage = &message;
         exchangeMessage(pCLThread);
     }
@@ -165,17 +186,20 @@ private:
 
 
 template <class T>
-class CLChannelHolder {
+class CLChannelHolder
+{
 public:
 };
 
 
 template <class T>
-class CLInputChannel : public CLChannelHolder<T> {
+class CLInputChannel : public CLChannelHolder<T>
+{
 public:
     CLInputChannel(CLChannel<T>* pCLChannel, CLThread* pCLThread) : m_pCLChannel(pCLChannel), m_pCLThread(pCLThread) {}
 
-    void get(T& param) {
+    void get(T& param)
+    {
         m_pCLChannel->in(param, m_pCLThread);
     }
 
@@ -185,11 +209,13 @@ public:
 
 
 template <class T>
-class CLOutputChannel : public CLChannelHolder<T> {
+class CLOutputChannel : public CLChannelHolder<T>
+{
 public:
     CLOutputChannel(CLChannel<T>* pCLChannel, CLThread* pCLThread) : m_pCLChannel(pCLChannel), m_pCLThread(pCLThread) {}
 
-    void set(T& param) {
+    void set(T& param)
+    {
         m_pCLChannel->out(param, m_pCLThread);
     }
 

@@ -5,12 +5,15 @@
 #include "CLThread.h"
 
 
-class PushThread : public CLThread {
+class PushThread : public CLThread
+{
 public:
     PushThread(CLChannel<int>* ch) : m_oChannel(ch, this) {};
 
-    void main() {
-        for (int i = 0; ; ++i) {
+    void main()
+    {
+        for (int i = 0; ; ++i)
+        {
             m_oChannel.set(i);
             printf("push i = %d\n", i);
         }
@@ -21,12 +24,15 @@ private:
 };
 
 
-class PopThread : public CLThread {
+class PopThread : public CLThread
+{
 public:
     PopThread(CLChannel<int>* ch) : m_iChannel(ch, this) {};
 
-    void main() {
-        for (;;) {
+    void main()
+    {
+        for (;;)
+        {
             int message;
 
             m_iChannel.get(message);
@@ -39,7 +45,8 @@ private:
 };
 
 
-int main() {
+int main()
+{
     CLChannel<int> channel;
 
     PushThread thread1(&channel);
