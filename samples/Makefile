@@ -1,5 +1,5 @@
 CFLAGS += -fno-stack-protector # __stack_chk_fail の除去
-CFLAGS += -fno-exceptions # __gxx_personality_v0 を除去
+CFLAGS += -fno-exceptions # __gxx_personality_v0 の除去
 CFLAGS += -fno-rtti
 
 all:
