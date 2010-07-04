@@ -1,6 +1,11 @@
 #include <stdint.h>
 __asm__(".code16gcc");
 
+extern "C"
+{
+    void main_func(); // マングリングしないようにする
+}
+
 void put_char(uint32_t addr, uint32_t ch)
 {
     __asm__(
@@ -21,7 +26,7 @@ void put_char(uint32_t addr, uint32_t ch)
         );
 }
 
-void main()
+void main_func()
 {
     uint8_t asciiz[] = "hello,world!";
     uint8_t* src = asciiz;

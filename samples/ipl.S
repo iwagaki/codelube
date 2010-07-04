@@ -1,7 +1,7 @@
 .intel_syntax	noprefix	# AT&T 式は好きじゃないので Intel 式に切り替える
 .code16
 .section 	boot_loader
-.extern 	main
+.extern 	main_func
 .global		_start
 .org		0
     
@@ -15,5 +15,5 @@ start:
     mov		ss, ax
     mov		sp, 0xfff0	# スタックポインタの設定
 
-    call	main		# C 言語で作成した main 関数を呼び出す
+    call	main_func	# C++ 言語で作成した main 関数を呼び出す
     jmp		$		# 現在位置への無限ループ
