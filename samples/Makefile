@@ -1,3 +1,6 @@
+# for amd64 users
+# sudo apt-get install libc6-dev-i386
+
 CFLAGS += -fno-stack-protector # __stack_chk_fail の除去
 CFLAGS += -fno-exceptions # __gxx_personality_v0 の除去
 CFLAGS += -fno-rtti

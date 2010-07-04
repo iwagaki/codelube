@@ -5,7 +5,7 @@ SIGN_ADDR = 510;
 SECTIONS
 {
     . = BASE_ADDR;
-    .ipl : {
+    .boot_loader : {
     	ipl.o
     }
     .text : {

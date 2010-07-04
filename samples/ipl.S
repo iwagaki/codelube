@@ -1,6 +1,6 @@
 .intel_syntax	noprefix	# AT&T 式は好きじゃないので Intel 式に切り替える
 .code16
-.section 	boot_loader
+.section 	.boot_loader
 .extern 	main_func
 .global		_start
 .org		0
