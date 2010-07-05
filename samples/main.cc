@@ -1,5 +1,6 @@
-#include <stdint.h>
 __asm__(".code16gcc"); // リアルモード用のコード
+
+#include <stdint.h>
 
 extern "C"
 {
