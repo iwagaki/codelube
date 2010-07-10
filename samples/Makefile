@@ -7,8 +7,9 @@ CFLAGS += -fno-rtti
 
 all:
 	gcc -c -m32 ipl.S
+	gcc -c -m32 kernel.S
 	g++ -c -m32 -O3 ${CFLAGS} main.cc
-	ld -melf_i386 -T bootimage.ls -o bootimage.bin ipl.o main.o
+	ld -melf_i386 -T bootimage.ls -o bootimage.bin ipl.o kernel.o main.o
 
 clean:
 	rm *.o
