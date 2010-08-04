@@ -31,15 +31,16 @@ start:
 #    movb       es:[0], 0xea
 #    movb       es:[1], 0x05
     
-#    mov                ax, 0x4200
-#    mov                si, DAP
-#    int                0x13
-#    jc         error
+     ## mov        ax, 0x4200
+     ## mov        si, DAP
+     ## int        0x13
+     ## jc         error
 
-    mov         ax, 0x1000
+    mov         ax, 0x1000	
     mov         es, ax
     mov         bx, 0
     mov         ah, 2
+    ##  sector
     mov         al, 10
     mov         ch, 0
     mov         cl, 1
@@ -54,17 +55,17 @@ start:
 #    cmpb       es:[1], 0x05
 #    jne                error
 
-#    mov                ax, 0x1000
-#    mov                es, ax
-#    mov                bx, 0
-#    jmp                dump
+    ## mov                ax, 0x1000
+    ## mov                es, ax
+    ## mov                bx, 0xa30
+    ## jmp                dump	
 
     #    cmpb   es:[512], 0x8c
 #    jne                error
 #    cmpb       es:[513], 0xc8
 #    jne                error
 
-    jmp         0x1020:0000
+    jmp         0x1000:0x0200
 
 error:
     mov         ax, 0xb800
@@ -109,8 +110,8 @@ less_than_0a_2:
 DAP:
     .byte       0x10            # size of DAP
     .byte       0x00            # unused
-    .word       0x0001          # number of sectors to be read
+    .word       0x7f7f          # number of sectors to be read
     .word       0x0000
     .word       0x1000
-    .long       0x0000          # start secotr (LBA)
-    .long       0x0000          # start secotr (LBA)
+    .long       0x00000000      # start secotr (LBA)
+    .long       0x00000000      # start secotr (LBA)
