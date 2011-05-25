@@ -43,11 +43,13 @@ public:
     void wait()
     {
         m_threadList.remove(this);
+        m_waitingThreadList.push_back(this);
     }
 
     void run()
     {
         m_threadList.push_back(this);
+        m_waitingThreadList.remove(this);
     }
 
     static void yield()
@@ -61,6 +63,9 @@ public:
         {
             if (m_threadList.size() == 0)
             {
+                if (m_waitingThreadList.size() == 0)
+                    return;
+
                 assert(0); // no registered thread or deadlock
                 return;
             }
@@ -72,7 +77,7 @@ public:
             {
                 CLThread* pCLThread = *i++;
                 // ** WARNING ** increase i before calling pCLThread->call()
-                // pCLThread->call() somtimes remove pCLThread from m_threadList and never remove the other thread.
+                // pCLThread->call() somtimes removes itself from m_threadList
                 pCLThread->call();
             }
         }
@@ -113,6 +118,7 @@ private:
         m_pCurrentContext->pOwnerThread->main();
 
         m_threadList.remove(m_pCurrentContext->pOwnerThread);
+        m_waitingThreadList.remove(m_pCurrentContext->pOwnerThread);
         yield();
 
         abort(); // never to reach here
@@ -124,6 +130,7 @@ private:
 
     static CLThreadContext*     m_pCurrentContext; // the current context structure
     static std::list<CLThread*> m_threadList; // the list of registered CLThreads
+    static std::list<CLThread*> m_waitingThreadList; // the list of waiting CLThreads
 };
 
 
@@ -131,7 +138,7 @@ template <class T>
 class CLChannel
 {
 public:
-    CLChannel() : m_pSrcMessage(0) {}
+    CLChannel() : m_pSrcMessage(0), m_numOfDstChannels(0) {}
     ~CLChannel() {}
 
     void copyMessage()
@@ -160,10 +167,19 @@ public:
 
     void exchangeMessage(CLThread* pCLThread)
     {
-        if (m_pSrcMessage && (m_pDstMessageList.size() != 0)) // adhoc
-            copyMessage();
+        if (m_numOfDstChannels > 0)
+        {
+            if (m_pSrcMessage && m_pDstMessageList.size() == m_numOfDstChannels)
+                copyMessage();
+            else
+                waitMessage(pCLThread);
+        }
         else
-            waitMessage(pCLThread);
+        {
+            for (typename std::list<CLThread*>::iterator i = m_waitingThreadList.begin(); i != m_waitingThreadList.end(); ++i)
+                (*i)->run();
+            m_waitingThreadList.clear();
+        }
     }
 
     void in(T& message, CLThread* pCLThread)
@@ -178,8 +194,28 @@ public:
         exchangeMessage(pCLThread);
     }
 
+    void addRef()
+    {
+        ++m_numOfDstChannels;
+    }
+
+    void removeRef(CLThread* pCLThread)
+    {
+        --m_numOfDstChannels;
+
+        // if (m_pSrcMessage && m_pDstMessageList.size() > 0 && m_pDstMessageList.size() == m_numOfDstChannels)
+        //     copyMessage();
+        exchangeMessage(pCLThread);
+    }
+
+    int getRef()
+    {
+        return m_numOfDstChannels;
+    }
+
 private:
     T* m_pSrcMessage;
+    unsigned int m_numOfDstChannels;
     std::list<T*> m_pDstMessageList;
     std::list<CLThread*> m_waitingThreadList;
 };
@@ -196,7 +232,15 @@ template <class T>
 class CLInputChannel : public CLChannelHolder<T>
 {
 public:
-    CLInputChannel(CLChannel<T>* pCLChannel, CLThread* pCLThread) : m_pCLChannel(pCLChannel), m_pCLThread(pCLThread) {}
+    CLInputChannel(CLChannel<T>* pCLChannel, CLThread* pCLThread) : m_pCLChannel(pCLChannel), m_pCLThread(pCLThread)
+    {
+        m_pCLChannel->addRef();
+    }
+    
+    void disconnect()
+    {
+        m_pCLChannel->removeRef(m_pCLThread);
+    }
 
     void get(T& param)
     {
@@ -217,6 +261,11 @@ public:
     void set(T& param)
     {
         m_pCLChannel->out(param, m_pCLThread);
+    }
+
+    int getRef()
+    {
+        return m_pCLChannel->getRef();
     }
 
     CLChannel<T>* m_pCLChannel;

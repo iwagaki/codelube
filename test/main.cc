@@ -1,21 +1,25 @@
 #include <stdint.h>
 #include <cstdio>
 #include <list>
+#include <time.h>
 
 #include "CLThread.h"
 
-
-class PushThread : public CLThread
+class CountThread : public CLThread
 {
 public:
-    PushThread(CLChannel<int>* ch) : m_oChannel(ch, this) {};
+    CountThread(CLChannel<int>* ch) : m_oChannel(ch, this) {};
 
     void main()
     {
         for (int i = 0; ; ++i)
         {
+            if (m_oChannel.getRef() == 0)
+            {
+                break;
+            }
+
             m_oChannel.set(i);
-            printf("push i = %d\n", i);
         }
     }
 
@@ -24,10 +28,14 @@ private:
 };
 
 
-class PopThread : public CLThread
+class SleepThread : public CLThread
 {
 public:
-    PopThread(CLChannel<int>* ch) : m_iChannel(ch, this) {};
+    SleepThread(CLChannel<int>* ch, int time) : m_iChannel(ch, this)
+    {
+        assert(time >= 0);
+        m_time = time;
+    };
 
     void main()
     {
@@ -36,21 +44,37 @@ public:
             int message;
 
             m_iChannel.get(message);
-            printf("Pop i = %d\n", message);
+//            printf("%d: get message = %d\n", m_time, message);
+            if (message == m_time)
+            {
+                printf("%d\n", m_time);
+                break;
+            }
         }
+
+        m_iChannel.disconnect();
     }
 
 private:
     CLInputChannel<int> m_iChannel;
+    int m_time;
 };
 
 
 int main()
 {
-    CLChannel<int> channel;
+    srand(time(0));
 
-    PushThread thread1(&channel);
-    PopThread thread2(&channel);
+    CLChannel<int> channel;
+    std::list<int> target;
+
+    for (int i = 0; i < 100; ++i)
+        target.push_back(rand() % 1000);
+
+    CountThread count(&channel);
+
+    for (std::list<int>::iterator i = target.begin(); i != target.end(); ++i)
+        new SleepThread(&channel, *i);
 
     CLThread::start();
 
